@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth_token',
         ]);
 
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureRole::class,
+        ]);
+
         $middleware->appendToGroup('api', \App\Http\Middleware\AuthenticateWithTokenCookie::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

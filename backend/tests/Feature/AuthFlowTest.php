@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AuthAuditLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -39,6 +40,7 @@ it('logs out and revokes token from bearer token', function () {
         ->assertCookieExpired('auth_token');
 
     expect(PersonalAccessToken::query()->find($token->id))->toBeNull();
+    expect(AuthAuditLog::query()->where('event', 'logout')->exists())->toBeTrue();
 });
 
 it('redirects with structured error and request id when oauth callback fails', function () {
@@ -60,4 +62,27 @@ it('redirects with structured error and request id when oauth callback fails', f
     expect($redirectUrl)->toContain('/auth/callback?');
     expect($redirectUrl)->toContain('error=oauth_failed');
     expect($redirectUrl)->toContain('request_id=');
+    expect(AuthAuditLog::query()->where('event', 'oauth_failed')->exists())->toBeTrue();
+});
+
+it('forbids non-admin user from admin overview endpoint', function () {
+    $user = User::factory()->create(['role' => User::ROLE_USER]);
+    Sanctum::actingAs($user);
+
+    $this->getJson('/api/admin/overview')
+        ->assertForbidden()
+        ->assertJson(['message' => 'Forbidden.']);
+});
+
+it('allows admin user to access admin overview endpoint', function () {
+    $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+    Sanctum::actingAs($admin);
+
+    $this->getJson('/api/admin/overview')
+        ->assertOk()
+        ->assertJsonStructure([
+            'users_total',
+            'admins_total',
+            'auth_events_total',
+        ]);
 });

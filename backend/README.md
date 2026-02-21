@@ -1,52 +1,73 @@
 # Backend (Laravel 12)
 
-Backend ini bertanggung jawab untuk:
-- OAuth Google (Socialite)
-- Manajemen user login Google
-- Penerbitan token Sanctum
-- Kuki sesi `auth_token` (httpOnly)
-- API endpoint `me` dan `logout`
+Backend bertanggung jawab untuk OAuth Google, manajemen token/cookie, role, dan audit log autentikasi.
 
-## 1. Alur Backend
+## Arsitektur Ringkas
 
-1. `GET /auth/google/redirect`  
-   Arahkan pengguna ke OAuth Google.
+- `app/Http/Controllers/GoogleAuthController.php`
+  - endpoint OAuth (`redirect`, `callback`)
+  - endpoint auth API (`me`, `myActivity`, `logout`, `adminOverview`)
+- `app/Support/Auth/AuthFlowService.php`
+  - issue/revoke token Sanctum
+  - set/clear cookie auth
+  - redirect sukses/gagal auth
+- `app/Support/Auth/GoogleUserService.php`
+  - sinkronisasi data user Google ke tabel `users`
+  - auto-assign role admin berdasar `ADMIN_EMAILS`
+- `app/Support/Auth/AuthAuditLogger.php`
+  - pencatatan event auth ke `auth_audit_logs`
+  - retensi otomatis: simpan hanya 5 data terbaru per scope
+- `app/Http/Middleware/AuthenticateWithTokenCookie.php`
+  - membaca cookie `auth_token` lalu injeksi bearer token ke request
+- `app/Http/Middleware/EnsureRole.php`
+  - middleware `role:admin` untuk endpoint admin
 
-2. `GET /auth/google/callback`  
-   Terima callback dari Google, ambil profil pengguna, simpan/perbarui pengguna, buat token autentikasi, set kuki, lalu arahkan ke callback frontend.
+## Route
 
-3. `GET /api/me`  
-   Ambil data pengguna yang sedang login (`auth:sanctum`).
+### `routes/web.php`
+- `GET /auth/google/redirect` (throttle)
+- `GET /auth/google/callback` (throttle)
 
-4. `POST /api/logout`  
-   Cabut token dan hapus kuki autentikasi.
+### `routes/api.php`
+- `GET /api/me` (`auth:sanctum`)
+- `GET /api/me/activity` (`auth:sanctum`, max 5 data)
+- `GET /api/admin/overview` (`auth:sanctum`, `role:admin`)
+- `POST /api/logout`
 
-## 2. Berkas Penting untuk Dipelajari
+## Role Admin
 
-- `app/Http/Controllers/GoogleAuthController.php`  
-  Orkestrasi endpoint autentikasi.
+### Otomatis via `.env`
+```env
+ADMIN_EMAILS=admin1@domain.com,admin2@domain.com
+```
 
-- `app/Support/Auth/AuthFlowService.php`  
-  Layanan reusable untuk:
-  - redirect sukses/gagal
-  - terbitkan/cabut token
-  - buat/hapus kuki autentikasi
+Email yang ada pada daftar ini akan mendapat role `admin` saat login Google.
 
-- `app/Support/Auth/GoogleUserService.php`  
-  Layanan reusable untuk upsert pengguna Google.
+### Manual via command
+```bash
+php artisan auth:role user@email.com admin
+php artisan auth:role user@email.com user
+```
 
-- `app/Http/Middleware/AuthenticateWithTokenCookie.php`  
-  Menyisipkan bearer token dari kuki `auth_token` ke request API.
+## Audit Log
 
-- `routes/web.php`  
-  Route OAuth (`/auth/google/redirect`, `/auth/google/callback`) + throttle.
+Tabel: `auth_audit_logs`
 
-- `routes/api.php`  
-  Route API autentikasi (`/api/me`, `/api/logout`).
+Event utama:
+- `login_success`
+- `logout`
+- `oauth_failed`
+- `email_not_available`
 
-## 3. Variabel Environment Penting
+Kolom penting:
+- `event`, `user_id`, `email`, `request_id`, `ip_address`, `user_agent`, `context`, `created_at`
 
-Contoh:
+Retensi:
+- backend menjaga hanya 5 record terakhir agar tabel tidak menumpuk.
+
+## Konfigurasi Environment
+
+`backend/.env`:
 
 ```env
 APP_URL=http://localhost:8000
@@ -62,9 +83,11 @@ AUTH_COOKIE_DOMAIN=
 AUTH_COOKIE_SAME_SITE=lax
 AUTH_COOKIE_SECURE=false
 SANCTUM_EXPIRATION=10080
+
+ADMIN_EMAILS=
 ```
 
-## 4. Menjalankan Backend
+## Menjalankan Backend
 
 ```bash
 composer install
@@ -74,34 +97,24 @@ php artisan optimize:clear
 php artisan serve
 ```
 
-## 5. Pengujian
-
-Pengujian utama autentikasi ada di:
-- `tests/Feature/AuthFlowTest.php`
-
-Jalankan:
+## Test
 
 ```bash
 vendor/bin/pest --filter AuthFlowTest
 ```
 
-## 6. Catatan Produksi
+## Troubleshooting
 
-- Set `APP_ENV=production`, `APP_DEBUG=false`
-- Gunakan HTTPS
-- Set `AUTH_COOKIE_SECURE=true`
-- Set `AUTH_COOKIE_DOMAIN` untuk domain produksi
-- Lakukan rotasi `GOOGLE_CLIENT_SECRET` jika pernah terekspos
+### Error `redirect_uri_mismatch`
+- pastikan URL callback di Google Cloud Console sama persis dengan:
+  - `http://localhost:8000/auth/google/callback`
+- cek juga `.env` `GOOGLE_REDIRECT_URI` harus identik.
 
-## 7. Pemecahan Masalah Cepat
+### Error `oauth_failed`
+- cek `storage/logs/laravel.log`
+- gunakan `request_id` untuk melacak event callback dan audit.
 
-### `redirect_uri_mismatch`
-- Cek Google Cloud Console:
-  - `http://localhost:8000/auth/google/callback` harus sama persis
-
-### `oauth_failed`
-- Cek `storage/logs/laravel.log`
-- Gunakan `request_id` dari query callback untuk melacak log
-
-### Logout tidak efektif
-- Cek response `POST /api/logout` mengirim kuki expired untuk `auth_token`
+### Endpoint admin selalu `403`
+- cek nilai `users.role`
+- cek `ADMIN_EMAILS`
+- atau set manual menggunakan command `auth:role`.
