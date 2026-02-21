@@ -1,12 +1,12 @@
 # Backend (Laravel 12)
 
-Backend bertanggung jawab untuk OAuth Google, manajemen token/cookie, role, dan audit log autentikasi.
+Backend bertanggung jawab untuk OAuth Google, manajemen token/cookie, role, audit log autentikasi, rate limit, dan monitoring endpoint auth.
 
 ## Arsitektur Ringkas
 
 - `app/Http/Controllers/GoogleAuthController.php`
   - endpoint OAuth (`redirect`, `callback`)
-  - endpoint auth API (`me`, `myActivity`, `logout`, `adminOverview`)
+  - endpoint auth API (`session`, `refresh`, `me`, `myActivity`, `logout`, `adminOverview`)
 - `app/Support/Auth/AuthFlowService.php`
   - issue/revoke token Sanctum
   - set/clear cookie auth
@@ -16,23 +16,30 @@ Backend bertanggung jawab untuk OAuth Google, manajemen token/cookie, role, dan 
   - auto-assign role admin berdasar `ADMIN_EMAILS`
 - `app/Support/Auth/AuthAuditLogger.php`
   - pencatatan event auth ke `auth_audit_logs`
+  - deteksi lonjakan `oauth_failed` berbasis cache window
   - retensi otomatis: simpan hanya 5 data terbaru per scope
 - `app/Http/Middleware/AuthenticateWithTokenCookie.php`
   - membaca cookie `auth_token` lalu injeksi bearer token ke request
 - `app/Http/Middleware/EnsureRole.php`
   - middleware `role:admin` untuk endpoint admin
+- `app/Http/Middleware/AuthEndpointMonitor.php`
+  - monitoring endpoint auth + logging request_id/status/duration
+- `app/Http/Middleware/SecurityHeaders.php`
+  - security headers backend (CSP, HSTS production, XFO, Referrer Policy, dll)
 
 ## Route
 
 ### `routes/web.php`
-- `GET /auth/google/redirect` (throttle)
-- `GET /auth/google/callback` (throttle)
+- `GET /auth/google/redirect` (`throttle:oauth-google`, `auth.monitor`)
+- `GET /auth/google/callback` (`throttle:oauth-google`, `auth.monitor`)
 
 ### `routes/api.php`
-- `GET /api/me` (`auth:sanctum`)
+- `GET /api/auth/session` (`auth:sanctum`, `throttle:auth-session`, `auth.monitor`)
+- `POST /api/auth/refresh` (`auth:sanctum`, `throttle:auth-refresh`, `auth.monitor`)
+- `GET /api/me` (`auth:sanctum`, `throttle:auth-me`, `auth.monitor`)
 - `GET /api/me/activity` (`auth:sanctum`, max 5 data)
 - `GET /api/admin/overview` (`auth:sanctum`, `role:admin`)
-- `POST /api/logout`
+- `POST /api/logout` (`throttle:auth-logout`, `auth.monitor`)
 
 ## Role Admin
 
@@ -58,12 +65,16 @@ Event utama:
 - `logout`
 - `oauth_failed`
 - `email_not_available`
+- `token_refreshed`
 
 Kolom penting:
 - `event`, `user_id`, `email`, `request_id`, `ip_address`, `user_agent`, `context`, `created_at`
 
 Retensi:
 - backend menjaga hanya 5 record terakhir agar tabel tidak menumpuk.
+
+Monitoring tambahan:
+- alert lonjakan `oauth_failed` akan ditulis ke log level `critical` saat melewati threshold dalam window waktu tertentu.
 
 ## Konfigurasi Environment
 
@@ -85,6 +96,14 @@ AUTH_COOKIE_SECURE=false
 SANCTUM_EXPIRATION=10080
 
 ADMIN_EMAILS=
+RATE_LIMIT_OAUTH_GOOGLE=20
+RATE_LIMIT_AUTH_SESSION=120
+RATE_LIMIT_AUTH_ME=60
+RATE_LIMIT_AUTH_LOGOUT=30
+RATE_LIMIT_AUTH_REFRESH=20
+ALERT_OAUTH_FAILED_THRESHOLD=5
+ALERT_OAUTH_FAILED_WINDOW_SECONDS=300
+ALERT_OAUTH_FAILED_COOLDOWN_SECONDS=120
 ```
 
 ## Menjalankan Backend

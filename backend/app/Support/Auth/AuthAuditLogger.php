@@ -4,6 +4,8 @@ namespace App\Support\Auth;
 
 use App\Models\AuthAuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class AuthAuditLogger
 {
@@ -29,7 +31,47 @@ class AuthAuditLogger
             'created_at' => now(),
         ]);
 
+        $this->monitorOAuthFailureSpike($event, $request);
         $this->pruneToLatestFive($userId, $email);
+    }
+
+    private function monitorOAuthFailureSpike(string $event, Request $request): void
+    {
+        if ($event !== 'oauth_failed') {
+            return;
+        }
+
+        $windowSeconds = max((int) env('ALERT_OAUTH_FAILED_WINDOW_SECONDS', 300), 60);
+        $threshold = max((int) env('ALERT_OAUTH_FAILED_THRESHOLD', 5), 1);
+        $cooldownSeconds = max((int) env('ALERT_OAUTH_FAILED_COOLDOWN_SECONDS', 120), 30);
+
+        $counterKey = 'monitor:oauth_failed:global_count';
+        $alertLockKey = 'monitor:oauth_failed:alert_lock';
+
+        if (! Cache::has($counterKey)) {
+            Cache::put($counterKey, 0, now()->addSeconds($windowSeconds));
+        }
+
+        $count = (int) Cache::increment($counterKey);
+
+        if ($count < $threshold) {
+            return;
+        }
+
+        if (! Cache::add($alertLockKey, true, now()->addSeconds($cooldownSeconds))) {
+            return;
+        }
+
+        Log::critical('OAuth failure spike detected', [
+            'event' => $event,
+            'count_in_window' => $count,
+            'window_seconds' => $windowSeconds,
+            'threshold' => $threshold,
+            'cooldown_seconds' => $cooldownSeconds,
+            'path' => $request->path(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
     }
 
     private function pruneToLatestFive(?int $userId, ?string $email): void

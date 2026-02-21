@@ -9,10 +9,16 @@ Monorepo autentikasi berbasis Google OAuth untuk kebutuhan SaaS.
 
 - Login Google OAuth
 - Session/token via cookie httpOnly (`auth_token`)
+- Sliding session refresh (`POST /api/auth/refresh`)
 - Halaman private `/dashboard`
+- Halaman admin `/dashboard/admin`
 - Role `user` dan `admin`
-- Endpoint admin terproteksi middleware role
+- Endpoint admin terproteksi middleware role + guard frontend
 - Audit log autentikasi (retensi 5 data terbaru)
+- Monitoring endpoint auth + request id
+- Alert lonjakan `oauth_failed` berbasis cache window
+- Rate limiting endpoint auth sensitif
+- Security headers frontend dan backend (CSP, HSTS, XFO, Referrer Policy, dll)
 - Halaman status/error: `401`, `403`, `404`, `500`
 
 ## Alur Login
@@ -34,15 +40,18 @@ Monorepo autentikasi berbasis Google OAuth untuk kebutuhan SaaS.
 - `/login` halaman login
 - `/auth/callback` halaman transit setelah OAuth
 - `/dashboard` halaman private
+- `/dashboard/admin` halaman admin
 - `/401`, `/403`, `/500`, serta `not-found` untuk 404
 
 ### Backend
 - `GET /auth/google/redirect`
 - `GET /auth/google/callback`
+- `GET /api/auth/session` (`auth:sanctum`)
+- `POST /api/auth/refresh` (`auth:sanctum`)
 - `GET /api/me` (`auth:sanctum`)
 - `GET /api/me/activity` (`auth:sanctum`, max 5 data)
 - `GET /api/admin/overview` (`auth:sanctum`, `role:admin`)
-- `POST /api/logout`
+- `POST /api/logout` (idempotent, selalu clear cookie)
 
 ## Quick Start
 
@@ -82,6 +91,14 @@ AUTH_COOKIE_SECURE=false
 SANCTUM_EXPIRATION=10080
 
 ADMIN_EMAILS=admin1@domain.com,admin2@domain.com
+RATE_LIMIT_OAUTH_GOOGLE=20
+RATE_LIMIT_AUTH_SESSION=120
+RATE_LIMIT_AUTH_ME=60
+RATE_LIMIT_AUTH_LOGOUT=30
+RATE_LIMIT_AUTH_REFRESH=20
+ALERT_OAUTH_FAILED_THRESHOLD=5
+ALERT_OAUTH_FAILED_WINDOW_SECONDS=300
+ALERT_OAUTH_FAILED_COOLDOWN_SECONDS=120
 ```
 
 ### Frontend (`frontend/.env`)
@@ -116,3 +133,14 @@ npm run lint
 
 - Backend: `backend/README.md`
 - Frontend: `frontend/README.md`
+- Riwayat perubahan: `CHANGELOG.md`
+
+## Panduan Rilis Singkat
+
+1. Pindahkan item selesai dari `Unreleased` ke versi baru di `CHANGELOG.md` (mis. `v0.5.0`).
+2. Commit dengan pesan jelas sesuai scope perubahan.
+3. Buat tag git versi:
+```bash
+git tag -a v0.5.0 -m "Release v0.5.0"
+git push origin v0.5.0
+```
