@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getApiBaseUrl } from "@/lib/env";
-
 export default function LogoutButton({ className = "" }: { className?: string }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -12,26 +10,35 @@ export default function LogoutButton({ className = "" }: { className?: string })
     setIsLoading(true);
 
     try {
-      const apiBaseUrl = getApiBaseUrl();
-      await fetch(`${apiBaseUrl}/api/logout`, {
+      const logoutResponse = await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
-        headers: {
-          Accept: "application/json",
-        },
+        headers: { Accept: "application/json" },
       });
 
-      await fetch("/api/auth/session/revalidate", {
+      if (!logoutResponse.ok) {
+        throw new Error(`Logout failed with status ${logoutResponse.status}`);
+      }
+
+      const revalidateResponse = await fetch("/api/auth/session/revalidate", {
         method: "POST",
         credentials: "include",
-        headers: {
-          Accept: "application/json",
-        },
+        headers: { Accept: "application/json" },
       });
+
+      if (!revalidateResponse.ok) {
+        throw new Error(`Revalidate failed with status ${revalidateResponse.status}`);
+      }
+    } catch (error) {
+      console.error("Logout failed", error);
+      window.alert("Logout gagal. Silakan coba lagi.");
+      return;
     } finally {
-      router.push("/login");
-      router.refresh();
+      setIsLoading(false);
     }
+
+    router.push("/login");
+    router.refresh();
   };
 
   return (

@@ -14,6 +14,29 @@ function authCookieName(): string
     return (string) env('AUTH_COOKIE_NAME', 'auth_token');
 }
 
+function csrfGuardHeaderName(): string
+{
+    return (string) env('CSRF_GUARD_HEADER_NAME', 'X-CSRF-Guard');
+}
+
+function csrfGuardHeaderValue(): string
+{
+    return (string) env('CSRF_GUARD_HEADER_VALUE', '1');
+}
+
+function trustedFrontendOrigin(): string
+{
+    $configured = collect(explode(',', (string) env('TRUSTED_FRONTEND_ORIGINS', '')))
+        ->map(fn (string $value) => trim($value))
+        ->first(fn (string $value) => $value !== '');
+
+    if (is_string($configured) && $configured !== '') {
+        return $configured;
+    }
+
+    return (string) env('FRONTEND_URL', 'http://localhost:3000');
+}
+
 it('authenticates /api/me for authenticated user', function () {
     $user = User::factory()->create();
     Sanctum::actingAs($user);
@@ -50,6 +73,8 @@ it('logs out and revokes token from bearer token', function () {
 
     $response = $this
         ->withHeader('Authorization', 'Bearer ' . $plainTextToken)
+        ->withHeader('Origin', trustedFrontendOrigin())
+        ->withHeader(csrfGuardHeaderName(), csrfGuardHeaderValue())
         ->postJson('/api/logout');
 
     $response
@@ -61,13 +86,11 @@ it('logs out and revokes token from bearer token', function () {
     expect(AuthAuditLog::query()->where('event', 'logout')->exists())->toBeTrue();
 });
 
-it('always returns success on logout without auth and expires cookie', function () {
+it('returns 401 on logout without auth', function () {
     $response = $this->postJson('/api/logout');
 
     $response
-        ->assertOk()
-        ->assertJson(['message' => 'Logged out'])
-        ->assertCookieExpired(authCookieName());
+        ->assertUnauthorized();
 });
 
 it('refreshes auth session and rotates bearer token cookie', function () {
@@ -76,6 +99,8 @@ it('refreshes auth session and rotates bearer token cookie', function () {
 
     $response = $this
         ->withHeader('Authorization', 'Bearer ' . $plainTextToken)
+        ->withHeader('Origin', trustedFrontendOrigin())
+        ->withHeader(csrfGuardHeaderName(), csrfGuardHeaderValue())
         ->postJson('/api/auth/refresh');
 
     $response
@@ -84,6 +109,31 @@ it('refreshes auth session and rotates bearer token cookie', function () {
         ->assertCookie(authCookieName());
 
     expect(AuthAuditLog::query()->where('event', 'token_refreshed')->exists())->toBeTrue();
+});
+
+it('returns 419 when csrf guard header is missing on refresh', function () {
+    $user = User::factory()->create();
+    $plainTextToken = $user->createToken('auth-token')->plainTextToken;
+
+    $this
+        ->withHeader('Authorization', 'Bearer ' . $plainTextToken)
+        ->withHeader('Origin', trustedFrontendOrigin())
+        ->postJson('/api/auth/refresh')
+        ->assertStatus(419)
+        ->assertJson(['message' => 'CSRF guard header missing or invalid.']);
+});
+
+it('returns 403 when request origin is not trusted on refresh', function () {
+    $user = User::factory()->create();
+    $plainTextToken = $user->createToken('auth-token')->plainTextToken;
+
+    $this
+        ->withHeader('Authorization', 'Bearer ' . $plainTextToken)
+        ->withHeader('Origin', 'https://evil.example')
+        ->withHeader(csrfGuardHeaderName(), csrfGuardHeaderValue())
+        ->postJson('/api/auth/refresh')
+        ->assertForbidden()
+        ->assertJson(['message' => 'Request origin is not trusted.']);
 });
 
 it('redirects with structured error and request id when oauth callback fails', function () {

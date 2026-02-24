@@ -35,11 +35,11 @@ Backend bertanggung jawab untuk OAuth Google, manajemen token/cookie, role, audi
 
 ### `routes/api.php`
 - `GET /api/auth/session` (`auth:sanctum`, `throttle:auth-session`, `auth.monitor`)
-- `POST /api/auth/refresh` (`auth:sanctum`, `throttle:auth-refresh`, `auth.monitor`)
+- `POST /api/auth/refresh` (`auth:sanctum`, `trusted.frontend`, `csrf.guard`, `throttle:auth-refresh`, `auth.monitor`)
 - `GET /api/me` (`auth:sanctum`, `throttle:auth-me`, `auth.monitor`)
 - `GET /api/me/activity` (`auth:sanctum`, max 5 data)
 - `GET /api/admin/overview` (`auth:sanctum`, `role:admin`)
-- `POST /api/logout` (`throttle:auth-logout`, `auth.monitor`)
+- `POST /api/logout` (`auth:sanctum`, `trusted.frontend`, `csrf.guard`, `throttle:auth-logout`, `auth.monitor`)
 
 ## Role Admin
 
@@ -83,6 +83,7 @@ Monitoring tambahan:
 ```env
 APP_URL=http://localhost:8000
 FRONTEND_URL=http://localhost:3000
+TRUSTED_FRONTEND_ORIGINS=http://localhost:3000
 
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
@@ -93,6 +94,8 @@ AUTH_TOKEN_TTL_MINUTES=10080
 AUTH_COOKIE_DOMAIN=
 AUTH_COOKIE_SAME_SITE=lax
 AUTH_COOKIE_SECURE=false
+CSRF_GUARD_HEADER_NAME=X-CSRF-Guard
+CSRF_GUARD_HEADER_VALUE=1
 SANCTUM_EXPIRATION=10080
 
 ADMIN_EMAILS=

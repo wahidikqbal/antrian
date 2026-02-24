@@ -14,6 +14,7 @@ export default function SessionRefresher() {
           credentials: "include",
           headers: {
             Accept: "application/json",
+            "X-CSRF-Guard": "1",
           },
         });
       } catch {

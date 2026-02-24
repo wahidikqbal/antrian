@@ -47,11 +47,11 @@ Monorepo autentikasi berbasis Google OAuth untuk kebutuhan SaaS.
 - `GET /auth/google/redirect`
 - `GET /auth/google/callback`
 - `GET /api/auth/session` (`auth:sanctum`)
-- `POST /api/auth/refresh` (`auth:sanctum`)
+- `POST /api/auth/refresh` (`auth:sanctum`, `trusted.frontend`, `csrf.guard`)
 - `GET /api/me` (`auth:sanctum`)
 - `GET /api/me/activity` (`auth:sanctum`, max 5 data)
 - `GET /api/admin/overview` (`auth:sanctum`, `role:admin`)
-- `POST /api/logout` (idempotent, selalu clear cookie)
+- `POST /api/logout` (`auth:sanctum`, `trusted.frontend`, `csrf.guard`, revoke token + clear cookie)
 
 ## Quick Start
 
@@ -78,6 +78,7 @@ npm run dev
 ```env
 APP_URL=http://localhost:8000
 FRONTEND_URL=http://localhost:3000
+TRUSTED_FRONTEND_ORIGINS=http://localhost:3000
 
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
@@ -88,6 +89,8 @@ AUTH_TOKEN_TTL_MINUTES=10080
 AUTH_COOKIE_DOMAIN=
 AUTH_COOKIE_SAME_SITE=lax
 AUTH_COOKIE_SECURE=false
+CSRF_GUARD_HEADER_NAME=X-CSRF-Guard
+CSRF_GUARD_HEADER_VALUE=1
 SANCTUM_EXPIRATION=10080
 
 ADMIN_EMAILS=admin1@domain.com,admin2@domain.com

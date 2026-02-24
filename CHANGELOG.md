@@ -9,6 +9,31 @@ Format mengacu pada prinsip [Keep a Changelog](https://keepachangelog.com/), den
 ### Added
 - Placeholder untuk perubahan berikutnya.
 
+## [v0.5.0] - 2026-02-24
+
+### Added
+- Middleware backend `trusted.frontend` untuk validasi `Origin/Referer` berdasarkan whitelist environment.
+- Middleware backend `csrf.guard` untuk validasi header anti-CSRF pada endpoint mutasi auth.
+- Endpoint internal frontend `POST /api/auth/logout` untuk menstabilkan proses logout via server-side forwarding.
+
+### Changed
+- Validasi auth di frontend (`checkSession`, `checkAdminRole`) menggunakan `cache: "no-store"` agar tidak stale.
+- Endpoint `POST /api/logout` kini mewajibkan `auth:sanctum` + `trusted.frontend` + `csrf.guard`.
+- Endpoint `POST /api/auth/refresh` kini mewajibkan `trusted.frontend` + `csrf.guard`.
+- Response `GET /api/me` disanitasi menjadi field minimum (`id`, `name`, `email`, `role`, `created_at`).
+- Ability token auth dipersempit dari wildcard `*` menjadi `auth:read` dan `auth:write`.
+
+### Security
+- Menambahkan konfigurasi env baru untuk hardening auth:
+  - `TRUSTED_FRONTEND_ORIGINS`
+  - `CSRF_GUARD_HEADER_NAME`
+  - `CSRF_GUARD_HEADER_VALUE`
+- `google_id` disembunyikan dari serialisasi model `User`.
+
+### Fixed
+- Perbaikan kasus user masih bisa mengakses halaman private setelah proses logout.
+- Perbaikan alur logout UI agar tetap menggunakan modal konfirmasi namun tetap memberikan feedback error yang jelas.
+
 ## [v0.4.0] - 2026-02-21
 
 ### Added

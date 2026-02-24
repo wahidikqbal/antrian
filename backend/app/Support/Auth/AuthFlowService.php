@@ -34,7 +34,7 @@ class AuthFlowService
         $user->tokens()->where('name', 'auth-token')->delete();
 
         return $user
-            ->createToken('auth-token', ['*'], now()->addMinutes($ttlMinutes))
+            ->createToken('auth-token', ['auth:read', 'auth:write'], now()->addMinutes($ttlMinutes))
             ->plainTextToken;
     }
 

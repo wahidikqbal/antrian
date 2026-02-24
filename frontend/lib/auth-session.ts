@@ -23,10 +23,7 @@ export async function checkSession(token: string | undefined): Promise<SessionCh
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
       },
-      next: {
-        revalidate: 30,
-        tags: ["auth-session"],
-      },
+      cache: "no-store",
     });
 
     if (response.status === 204) {
@@ -56,10 +53,7 @@ export async function checkAdminRole(token: string | undefined): Promise<AdminCh
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
       },
-      next: {
-        revalidate: 15,
-        tags: ["auth-role"],
-      },
+      cache: "no-store",
     });
 
     if (response.status === 401) {

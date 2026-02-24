@@ -46,7 +46,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { getApiBaseUrl } from "@/lib/env";
 
 type SidebarUser = {
   name: string;
@@ -141,25 +140,41 @@ function SidebarUserProfile({ user }: { user: SidebarUser }) {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
+    let isSuccess = false;
+
     try {
-      const apiBaseUrl = getApiBaseUrl();
-
-      await fetch(`${apiBaseUrl}/api/logout`, {
+      const logoutResponse = await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json" },
       });
 
-      await fetch("/api/auth/session/revalidate", {
+      if (!logoutResponse.ok) {
+        throw new Error(`Logout failed with status ${logoutResponse.status}`);
+      }
+
+      const revalidateResponse = await fetch("/api/auth/session/revalidate", {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json" },
       });
+
+      if (!revalidateResponse.ok) {
+        throw new Error(`Revalidate failed with status ${revalidateResponse.status}`);
+      }
+
+      isSuccess = true;
+    } catch (error) {
+      console.error("Logout failed", error);
+      window.alert("Logout gagal. Silakan coba lagi.");
     } finally {
       setIsLoggingOut(false);
       setIsLogoutDialogOpen(false);
-      router.push("/login");
-      router.refresh();
+
+      if (isSuccess) {
+        router.push("/login");
+        router.refresh();
+      }
     }
   };
 

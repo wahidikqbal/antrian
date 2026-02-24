@@ -21,6 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
             'auth.monitor' => \App\Http\Middleware\AuthEndpointMonitor::class,
+            'csrf.guard' => \App\Http\Middleware\RequireCsrfGuardHeader::class,
+            'trusted.frontend' => \App\Http\Middleware\EnsureTrustedFrontendOrigin::class,
         ]);
 
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
