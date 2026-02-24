@@ -1,6 +1,6 @@
-# API Auth SaaS (Laravel + Next.js)
+# API Auth Starter (Laravel + Next.js)
 
-Monorepo autentikasi berbasis Google OAuth untuk kebutuhan SaaS.
+Starter kit autentikasi berbasis Google OAuth untuk SaaS.
 
 - `backend/`: Laravel 12 + Socialite + Sanctum
 - `frontend/`: Next.js 16 (App Router)
@@ -20,6 +20,28 @@ Monorepo autentikasi berbasis Google OAuth untuk kebutuhan SaaS.
 - Rate limiting endpoint auth sensitif
 - Security headers frontend dan backend (CSP, HSTS, XFO, Referrer Policy, dll)
 - Halaman status/error: `401`, `403`, `404`, `500`
+
+## Starter Setup (Recommended)
+
+1. Copy environment files:
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+2. Isi Google OAuth credentials di `backend/.env`.
+
+3. Jalankan app:
+```bash
+cd backend && composer install && php artisan key:generate && php artisan migrate && php artisan serve
+cd frontend && npm install && npm run dev
+```
+
+4. Validasi security baseline:
+```bash
+cd backend
+php artisan auth:config-check
+```
 
 ## Alur Login
 
@@ -142,6 +164,8 @@ npm run lint
 - Backend: `backend/README.md`
 - Frontend: `frontend/README.md`
 - Deployment checklist: `docs/DEPLOYMENT_CHECKLIST.md`
+- Security policy: `SECURITY.md`
+- Contribution guide: `CONTRIBUTING.md`
 - Riwayat perubahan: `CHANGELOG.md`
 
 ## CI Gate

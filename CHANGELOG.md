@@ -16,6 +16,7 @@ Format mengacu pada prinsip [Keep a Changelog](https://keepachangelog.com/), den
 - Dokumen rilis operasional: `docs/DEPLOYMENT_CHECKLIST.md`.
 - Workflow CI `.github/workflows/ci.yml` dengan gate backend test, frontend lint/build, dan strict auth config check.
 - Helper server-side API base URL dengan allowlist host (`API_INTERNAL_ALLOWED_HOSTS`) untuk mencegah forwarding cookie ke host tak terotorisasi.
+- Dokumen packaging starter: `SECURITY.md`, `CONTRIBUTING.md`, dan `LICENSE`.
 
 ### Changed
 - Sinkronisasi nama cookie session default menjadi `laravel-session` pada env examples.

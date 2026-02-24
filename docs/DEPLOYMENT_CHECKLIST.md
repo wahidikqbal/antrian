@@ -30,6 +30,10 @@ Frontend (`frontend/.env`):
 NEXT_PUBLIC_API_URL=https://api.example.com
 NEXT_PUBLIC_FRONTEND_URL=https://app.example.com
 NEXT_PUBLIC_SESSION_COOKIE_NAME=laravel-session
+NEXT_PUBLIC_CSRF_GUARD_HEADER_NAME=X-CSRF-Guard
+NEXT_PUBLIC_CSRF_GUARD_HEADER_VALUE=1
+API_INTERNAL_URL=https://api.example.com
+API_INTERNAL_ALLOWED_HOSTS=api.example.com
 ```
 
 ## 2. Build and App Checks
