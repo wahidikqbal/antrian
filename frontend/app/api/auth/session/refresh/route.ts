@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionCookieNames } from "@/lib/env";
-
-function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-}
+import {
+  getCsrfGuardHeaderName,
+  getCsrfGuardHeaderValue,
+  getSessionCookieNames,
+} from "@/lib/env";
+import { getServerApiBaseUrl } from "@/lib/server-api";
 
 export async function POST(request: NextRequest) {
+  const apiBaseUrl = getServerApiBaseUrl();
+  const csrfGuardHeaderName = getCsrfGuardHeaderName();
+  const csrfGuardHeaderValue = getCsrfGuardHeaderValue();
   const sessionCookieNames = getSessionCookieNames();
   const hasSession = sessionCookieNames.some((name) => Boolean(request.cookies.get(name)?.value));
   const cookieHeader = request.headers.get("cookie") ?? "";
@@ -16,14 +20,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const upstream = await fetch(`${getApiBaseUrl()}/api/auth/refresh`, {
+    const upstream = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         Cookie: cookieHeader,
         Origin: request.nextUrl.origin,
         "X-XSRF-TOKEN": xsrfToken ? decodeURIComponent(xsrfToken) : "",
-        "X-CSRF-Guard": "1",
+        [csrfGuardHeaderName]: csrfGuardHeaderValue,
       },
       cache: "no-store",
     });

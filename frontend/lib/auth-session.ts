@@ -1,4 +1,5 @@
-import { getApiBaseUrl, getFrontendUrl } from "@/lib/env";
+import { getFrontendUrl } from "@/lib/env";
+import { getServerApiBaseUrl } from "@/lib/server-api";
 
 export type SessionCheckResult = {
   isValid: boolean;
@@ -17,7 +18,7 @@ export async function checkSession(cookieHeader: string | undefined): Promise<Se
   }
 
   try {
-    const response = await fetch(`${getApiBaseUrl()}/api/auth/session`, {
+    const response = await fetch(`${getServerApiBaseUrl()}/api/auth/session`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -48,7 +49,7 @@ export async function checkAdminRole(cookieHeader: string | undefined): Promise<
   }
 
   try {
-    const response = await fetch(`${getApiBaseUrl()}/api/me`, {
+    const response = await fetch(`${getServerApiBaseUrl()}/api/me`, {
       method: "GET",
       headers: {
         Accept: "application/json",

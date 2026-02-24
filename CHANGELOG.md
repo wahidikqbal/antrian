@@ -15,10 +15,13 @@ Format mengacu pada prinsip [Keep a Changelog](https://keepachangelog.com/), den
 - Command `php artisan auth:config-check` untuk validasi konfigurasi auth/security (`--strict` untuk aturan production).
 - Dokumen rilis operasional: `docs/DEPLOYMENT_CHECKLIST.md`.
 - Workflow CI `.github/workflows/ci.yml` dengan gate backend test, frontend lint/build, dan strict auth config check.
+- Helper server-side API base URL dengan allowlist host (`API_INTERNAL_ALLOWED_HOSTS`) untuk mencegah forwarding cookie ke host tak terotorisasi.
 
 ### Changed
 - Sinkronisasi nama cookie session default menjadi `laravel-session` pada env examples.
 - Frontend guard session kini toleran terhadap dua format nama cookie (`laravel-session` dan `laravel_session`) untuk transisi konfigurasi.
+- Header CSRF guard di frontend kini configurable via env (`NEXT_PUBLIC_CSRF_GUARD_HEADER_NAME`, `NEXT_PUBLIC_CSRF_GUARD_HEADER_VALUE`) agar sinkron dengan backend.
+- Endpoint `GET /api/me/activity` dan `GET /api/admin/overview` kini diberi rate limit + auth monitor.
 
 ## [v0.5.0] - 2026-02-24
 

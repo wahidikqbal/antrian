@@ -10,6 +10,14 @@ export function getSessionCookieName() {
   return process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME ?? "laravel-session";
 }
 
+export function getCsrfGuardHeaderName() {
+  return process.env.NEXT_PUBLIC_CSRF_GUARD_HEADER_NAME ?? "X-CSRF-Guard";
+}
+
+export function getCsrfGuardHeaderValue() {
+  return process.env.NEXT_PUBLIC_CSRF_GUARD_HEADER_VALUE ?? "1";
+}
+
 export function getSessionCookieNames() {
   const primary = getSessionCookieName();
   const candidates = [primary];

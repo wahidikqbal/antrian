@@ -1,4 +1,5 @@
-import { getApiBaseUrl, getFrontendUrl } from "@/lib/env";
+import { getFrontendUrl } from "@/lib/env";
+import { getServerApiBaseUrl } from "@/lib/server-api";
 
 export type MeResponse = {
   id: number;
@@ -38,7 +39,7 @@ export type ApiResult<T> =
   | ApiResultError;
 
 async function fetchAuthed<T>(path: string, cookieHeader: string): Promise<ApiResult<T>> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetch(`${getServerApiBaseUrl()}${path}`, {
     method: "GET",
     headers: {
       Accept: "application/json",

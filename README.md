@@ -48,8 +48,8 @@ Monorepo autentikasi berbasis Google OAuth untuk kebutuhan SaaS.
 - `GET /api/auth/session` (`auth:sanctum`)
 - `POST /api/auth/refresh` (`auth:sanctum`, `trusted.frontend`, `csrf.guard`)
 - `GET /api/me` (`auth:sanctum`)
-- `GET /api/me/activity` (`auth:sanctum`, max 5 data)
-- `GET /api/admin/overview` (`auth:sanctum`, `role:admin`)
+- `GET /api/me/activity` (`auth:sanctum`, `throttle:auth-activity`, max 5 data)
+- `GET /api/admin/overview` (`auth:sanctum`, `role:admin`, `throttle:auth-admin-overview`)
 - `POST /api/logout` (`auth:sanctum`, `trusted.frontend`, `csrf.guard`)
 
 ## Quick Start
@@ -94,6 +94,8 @@ ADMIN_EMAILS=admin1@domain.com,admin2@domain.com
 RATE_LIMIT_OAUTH_GOOGLE=20
 RATE_LIMIT_AUTH_SESSION=120
 RATE_LIMIT_AUTH_ME=60
+RATE_LIMIT_AUTH_ACTIVITY=30
+RATE_LIMIT_AUTH_ADMIN_OVERVIEW=20
 RATE_LIMIT_AUTH_LOGOUT=30
 RATE_LIMIT_AUTH_REFRESH=20
 ALERT_OAUTH_FAILED_THRESHOLD=5
@@ -106,6 +108,10 @@ ALERT_OAUTH_FAILED_COOLDOWN_SECONDS=120
 NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 NEXT_PUBLIC_SESSION_COOKIE_NAME=laravel-session
+NEXT_PUBLIC_CSRF_GUARD_HEADER_NAME=X-CSRF-Guard
+NEXT_PUBLIC_CSRF_GUARD_HEADER_VALUE=1
+API_INTERNAL_URL=http://localhost:8000
+API_INTERNAL_ALLOWED_HOSTS=localhost:8000
 ```
 
 ## Validasi Lokal

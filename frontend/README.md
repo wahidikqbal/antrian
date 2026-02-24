@@ -62,6 +62,10 @@ Proxy menggunakan keberadaan session cookie untuk gate awal, lalu data user/role
 NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 NEXT_PUBLIC_SESSION_COOKIE_NAME=laravel-session
+NEXT_PUBLIC_CSRF_GUARD_HEADER_NAME=X-CSRF-Guard
+NEXT_PUBLIC_CSRF_GUARD_HEADER_VALUE=1
+API_INTERNAL_URL=http://localhost:8000
+API_INTERNAL_ALLOWED_HOSTS=localhost:8000
 ```
 
 ## Menjalankan Frontend

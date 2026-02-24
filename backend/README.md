@@ -34,8 +34,8 @@ Backend bertanggung jawab untuk OAuth Google, manajemen session Sanctum, role, a
 - `GET /api/auth/session` (`auth:sanctum`, `throttle:auth-session`, `auth.monitor`)
 - `POST /api/auth/refresh` (`auth:sanctum`, `trusted.frontend`, `csrf.guard`, `throttle:auth-refresh`, `auth.monitor`)
 - `GET /api/me` (`auth:sanctum`, `throttle:auth-me`, `auth.monitor`)
-- `GET /api/me/activity` (`auth:sanctum`, max 5 data)
-- `GET /api/admin/overview` (`auth:sanctum`, `role:admin`)
+- `GET /api/me/activity` (`auth:sanctum`, `throttle:auth-activity`, `auth.monitor`, max 5 data)
+- `GET /api/admin/overview` (`auth:sanctum`, `role:admin`, `throttle:auth-admin-overview`, `auth.monitor`)
 - `POST /api/logout` (`auth:sanctum`, `trusted.frontend`, `csrf.guard`, `throttle:auth-logout`, `auth.monitor`)
 
 ## Role Admin
@@ -97,6 +97,8 @@ ADMIN_EMAILS=
 RATE_LIMIT_OAUTH_GOOGLE=20
 RATE_LIMIT_AUTH_SESSION=120
 RATE_LIMIT_AUTH_ME=60
+RATE_LIMIT_AUTH_ACTIVITY=30
+RATE_LIMIT_AUTH_ADMIN_OVERVIEW=20
 RATE_LIMIT_AUTH_LOGOUT=30
 RATE_LIMIT_AUTH_REFRESH=20
 ALERT_OAUTH_FAILED_THRESHOLD=5

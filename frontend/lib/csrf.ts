@@ -1,6 +1,6 @@
 "use client";
 
-import { getApiBaseUrl } from "@/lib/env";
+import { getApiBaseUrl, getCsrfGuardHeaderName, getCsrfGuardHeaderValue } from "@/lib/env";
 
 function readCookie(name: string): string | undefined {
   const item = document.cookie
@@ -30,8 +30,11 @@ export async function getCsrfHeaders(): Promise<Record<string, string>> {
     throw new Error("Missing XSRF-TOKEN cookie.");
   }
 
+  const csrfGuardHeaderName = getCsrfGuardHeaderName();
+  const csrfGuardHeaderValue = getCsrfGuardHeaderValue();
+
   return {
     "X-XSRF-TOKEN": xsrfToken,
-    "X-CSRF-Guard": "1",
+    [csrfGuardHeaderName]: csrfGuardHeaderValue,
   };
 }

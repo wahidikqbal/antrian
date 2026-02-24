@@ -44,6 +44,20 @@ class AppServiceProvider extends ServiceProvider
                 ->by('auth-me:'.$identifier);
         });
 
+        RateLimiter::for('auth-activity', function (Request $request): Limit {
+            $identifier = $request->user()?->id ?: $request->ip();
+
+            return Limit::perMinute((int) env('RATE_LIMIT_AUTH_ACTIVITY', 30))
+                ->by('auth-activity:'.$identifier);
+        });
+
+        RateLimiter::for('auth-admin-overview', function (Request $request): Limit {
+            $identifier = $request->user()?->id ?: $request->ip();
+
+            return Limit::perMinute((int) env('RATE_LIMIT_AUTH_ADMIN_OVERVIEW', 20))
+                ->by('auth-admin-overview:'.$identifier);
+        });
+
         RateLimiter::for('auth-logout', function (Request $request): Limit {
             $identifier = $request->user()?->id ?: $request->ip();
 
