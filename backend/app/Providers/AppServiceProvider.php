@@ -71,5 +71,26 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute((int) env('RATE_LIMIT_AUTH_REFRESH', 20))
                 ->by('auth-refresh:'.$identifier);
         });
+
+        RateLimiter::for('queue-read', function (Request $request): Limit {
+            $identifier = $request->user()?->id ?: $request->ip();
+
+            return Limit::perMinute((int) env('RATE_LIMIT_QUEUE_READ', 120))
+                ->by('queue-read:'.$identifier);
+        });
+
+        RateLimiter::for('queue-write', function (Request $request): Limit {
+            $identifier = $request->user()?->id ?: $request->ip();
+
+            return Limit::perMinute((int) env('RATE_LIMIT_QUEUE_WRITE', 30))
+                ->by('queue-write:'.$identifier);
+        });
+
+        RateLimiter::for('queue-admin-action', function (Request $request): Limit {
+            $identifier = $request->user()?->id ?: $request->ip();
+
+            return Limit::perMinute((int) env('RATE_LIMIT_QUEUE_ADMIN_ACTION', 60))
+                ->by('queue-admin-action:'.$identifier);
+        });
     }
 }

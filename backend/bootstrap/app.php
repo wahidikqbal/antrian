@@ -9,12 +9,14 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
             'auth.monitor' => \App\Http\Middleware\AuthEndpointMonitor::class,
+            'queue.snapshot.monitor' => \App\Http\Middleware\QueueSnapshotMonitor::class,
             'csrf.guard' => \App\Http\Middleware\RequireCsrfGuardHeader::class,
             'trusted.frontend' => \App\Http\Middleware\EnsureTrustedFrontendOrigin::class,
         ]);

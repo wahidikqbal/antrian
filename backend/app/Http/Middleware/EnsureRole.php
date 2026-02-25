@@ -19,6 +19,10 @@ class EnsureRole
         }
 
         if (! in_array($user->role, $roles, true)) {
+            if ($user->role === 'admin' && in_array('superadmin', $roles, true)) {
+                return $next($request);
+            }
+
             return response()->json([
                 'message' => 'Forbidden.',
             ], 403);

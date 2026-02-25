@@ -4,18 +4,15 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Activity,
   BadgeCheck,
   Bell,
-  ChartNoAxesCombined,
   CreditCard,
   ChevronsUpDown,
-  Globe,
-  LayoutTemplate,
   LogOut,
   PanelLeft,
   ShieldCheck,
   Sparkles,
+  Ticket,
   Users,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -65,11 +62,6 @@ type LinkItem = {
   icon: ReactNode;
 };
 
-type SoonItem = {
-  label: string;
-  icon: ReactNode;
-};
-
 function SidebarNavLink({
   href,
   children,
@@ -97,26 +89,27 @@ function SidebarNavLink({
 }
 
 const mainLinks: LinkItem[] = [
-  { href: "/dashboard/users", label: "Dashboard", icon: <Users className="size-4" /> },
-  { href: "/dashboard/websites", label: "Websites", icon: <Globe className="size-4" /> },
+  { href: "/dashboard/users", label: "Beranda", icon: <Users className="size-4" /> },
+  { href: "/dashboard/kiosk-antrian", label: "Kiosk Lobby", icon: <Ticket className="size-4" /> },
+  { href: "/dashboard/kiosk", label: "Kiosk Ruangan", icon: <Ticket className="size-4" /> },
 ];
 
-const mainSoonItems: SoonItem[] = [
-  { label: "Subscriptions", icon: <CreditCard className="size-4" /> },
-  { label: "Analytics", icon: <ChartNoAxesCombined className="size-4" /> },
+const commonLinks: LinkItem[] = [
+  { href: "/dashboard/activities", label: "Aktivitas", icon: <Bell className="size-4" /> },
 ];
 
-const otherLinks: LinkItem[] = [
-  { href: "/templates", label: "Templates", icon: <LayoutTemplate className="size-4" /> },
-  { href: "/dashboard/activities", label: "Activities", icon: <Activity className="size-4" /> },
-];
+function isSuperadminRole(role: string): boolean {
+  return ["admin", "superadmin"].includes(role.toLowerCase());
+}
 
-function isAdminRole(role: string): boolean {
-  return role.toLowerCase() === "admin";
+function isAdminLoketRole(role: string): boolean {
+  return ["admin", "superadmin", "admin_loket"].includes(role.toLowerCase());
 }
 
 function roleLabel(role: string): string {
-  return isAdminRole(role) ? "Admin" : "User";
+  if (isSuperadminRole(role)) return "Superadmin";
+  if (role.toLowerCase() === "admin_loket") return "Admin Loket";
+  return "User";
 }
 
 function getInitials(name: string): string {
@@ -276,16 +269,20 @@ function SidebarUserProfile({ user }: { user: SidebarUser }) {
 export default function DashboardSidebar({ user, children }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const adminLinks: LinkItem[] = isAdminRole(user.role)
-    ? [{ href: "/dashboard/admin", label: "Admin", icon: <ShieldCheck className="size-4" /> }]
+  const adminLinks: LinkItem[] = isAdminLoketRole(user.role)
+    ? [{ href: "/dashboard/admin-loket", label: "Admin Loket", icon: <ShieldCheck className="size-4" /> }]
     : [];
-  const allOtherLinks = [...otherLinks, ...adminLinks];
+  const superadminLinks: LinkItem[] = isSuperadminRole(user.role)
+    ? [{ href: "/dashboard/superadmin/lokets", label: "Master Loket", icon: <ShieldCheck className="size-4" /> }]
+    : [];
+  const allOtherLinks = [...commonLinks, ...adminLinks, ...superadminLinks];
 
   useEffect(() => {
     const prefetchTargets = [
       ...mainLinks.map((item) => item.href),
-      ...otherLinks.map((item) => item.href),
-      ...(isAdminRole(user.role) ? ["/dashboard/admin"] : []),
+      ...commonLinks.map((item) => item.href),
+      ...(isAdminLoketRole(user.role) ? ["/dashboard/admin-loket"] : []),
+      ...(isSuperadminRole(user.role) ? ["/dashboard/superadmin/lokets"] : []),
     ];
 
     prefetchTargets.forEach((href) => {
@@ -337,21 +334,6 @@ export default function DashboardSidebar({ user, children }: DashboardSidebarPro
                   </SidebarMenuItem>
                 ))}
 
-                {mainSoonItems.map((item) => (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      disabled
-                      tooltip={`${item.label} (Soon)`}
-                      className="cursor-not-allowed opacity-60"
-                    >
-                      {item.icon}
-                      <span>{item.label}</span>
-                      <span className="ml-auto rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                        Soon
-                      </span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

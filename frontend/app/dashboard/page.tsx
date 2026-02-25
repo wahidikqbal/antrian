@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function DashboardIndexPage() {
-  redirect("/dashboard/users");
+  redirect("/dashboard/kiosk-antrian");
 }

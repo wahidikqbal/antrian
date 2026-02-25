@@ -9,9 +9,8 @@ export async function proxy(request: NextRequest) {
   );
   const { pathname } = request.nextUrl;
   const isDashboardRoute = pathname.startsWith("/dashboard");
-  const isTemplatesRoute = pathname.startsWith("/templates");
   const isLoginRoute = pathname === "/login";
-  const isProtectedRoute = isDashboardRoute || isTemplatesRoute;
+  const isProtectedRoute = isDashboardRoute;
 
   if (!hasSessionCookie && isProtectedRoute) {
     return NextResponse.redirect(new URL("/401", request.url));
@@ -22,12 +21,12 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isLoginRoute) {
-    return NextResponse.redirect(new URL("/dashboard/users", request.url));
+    return NextResponse.redirect(new URL("/dashboard/kiosk-antrian", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/", "/login", "/templates/:path*", "/dashboard/:path*"],
+  matcher: ["/", "/login", "/dashboard/:path*"],
 };

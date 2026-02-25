@@ -30,3 +30,21 @@ export function getSessionCookieNames() {
 
   return Array.from(new Set(candidates));
 }
+
+export function getReverbAppKey() {
+  return process.env.NEXT_PUBLIC_REVERB_APP_KEY ?? "";
+}
+
+export function getReverbHost() {
+  return process.env.NEXT_PUBLIC_REVERB_HOST ?? "localhost";
+}
+
+export function getReverbPort() {
+  const raw = process.env.NEXT_PUBLIC_REVERB_PORT ?? "8080";
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isNaN(parsed) ? 8080 : parsed;
+}
+
+export function getReverbScheme() {
+  return process.env.NEXT_PUBLIC_REVERB_SCHEME ?? "http";
+}

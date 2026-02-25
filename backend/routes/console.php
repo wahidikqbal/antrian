@@ -12,8 +12,8 @@ Artisan::command('inspire', function () {
 Artisan::command('auth:role {email} {role}', function (string $email, string $role) {
     $normalizedRole = strtolower(trim($role));
 
-    if (! in_array($normalizedRole, [User::ROLE_USER, User::ROLE_ADMIN], true)) {
-        $this->error('Role tidak valid. Gunakan: user atau admin');
+    if (! in_array($normalizedRole, [User::ROLE_USER, User::ROLE_ADMIN, User::ROLE_SUPERADMIN, User::ROLE_ADMIN_LOKET], true)) {
+        $this->error('Role tidak valid. Gunakan: user, admin, superadmin, atau admin_loket');
         return self::FAILURE;
     }
 
@@ -28,7 +28,7 @@ Artisan::command('auth:role {email} {role}', function (string $email, string $ro
 
     $this->info("Role {$email} berhasil diubah menjadi {$normalizedRole}.");
     return self::SUCCESS;
-})->purpose('Set role user berdasarkan email (user/admin)');
+})->purpose('Set role user berdasarkan email (user/admin/superadmin/admin_loket)');
 
 Artisan::command('auth:config-check {--strict}', function () {
     /** @var AuthSecurityConfigChecker $checker */

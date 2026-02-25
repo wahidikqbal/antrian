@@ -168,7 +168,9 @@ class GoogleAuthController extends Controller
 
         return response()->json([
             'users_total' => User::query()->count(),
-            'admins_total' => User::query()->where('role', User::ROLE_ADMIN)->count(),
+            'admins_total' => User::query()
+                ->whereIn('role', [User::ROLE_ADMIN, User::ROLE_SUPERADMIN, User::ROLE_ADMIN_LOKET])
+                ->count(),
             'auth_events_total' => AuthAuditLog::query()->count(),
             'auth_events_today' => AuthAuditLog::query()
                 ->where('created_at', '>=', $todayStart)

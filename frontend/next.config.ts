@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const reverbHost = process.env.NEXT_PUBLIC_REVERB_HOST ?? "localhost";
+const reverbPort = process.env.NEXT_PUBLIC_REVERB_PORT ?? "8080";
+const reverbScheme = process.env.NEXT_PUBLIC_REVERB_SCHEME ?? "http";
+const reverbHttpUrl = `${reverbScheme}://${reverbHost}:${reverbPort}`;
+const reverbWsUrl = `${reverbScheme === "https" ? "wss" : "ws"}://${reverbHost}:${reverbPort}`;
+const fallbackReverbHttpUrl = `${reverbScheme}://${reverbHost}:8080`;
+const fallbackReverbWsUrl = `${reverbScheme === "https" ? "wss" : "ws"}://${reverbHost}:8080`;
+const connectSrcValues = Array.from(
+  new Set([apiBaseUrl, reverbHttpUrl, reverbWsUrl, fallbackReverbHttpUrl, fallbackReverbWsUrl]),
+).join(" ");
 const isProduction = process.env.NODE_ENV === "production";
 const scriptSrc = isProduction
   ? "script-src 'self'"
@@ -15,7 +25,7 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   scriptSrc,
-  `connect-src 'self' ${apiBaseUrl}`,
+  `connect-src 'self' ${connectSrcValues}`,
 ].join("; ");
 
 const securityHeaders = [

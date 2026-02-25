@@ -26,20 +26,49 @@ class GoogleUserService
 
     private function resolveRoleForEmail(string $email, ?string $currentRole): string
     {
+        if ($this->isSuperadminEmail($email)) {
+            return User::ROLE_SUPERADMIN;
+        }
+
+        if ($this->isAdminLoketEmail($email)) {
+            return User::ROLE_ADMIN_LOKET;
+        }
+
         if ($this->isAdminEmail($email)) {
             return User::ROLE_ADMIN;
         }
 
         // Keep manually assigned admin role unless explicitly changed by command.
-        if ($currentRole === User::ROLE_ADMIN) {
-            return User::ROLE_ADMIN;
+        if (in_array($currentRole, [User::ROLE_ADMIN, User::ROLE_SUPERADMIN, User::ROLE_ADMIN_LOKET], true)) {
+            return $currentRole;
         }
 
         return User::ROLE_USER;
     }
 
+    private function isSuperadminEmail(string $email): bool
+    {
+        $emails = collect(explode(',', (string) env('SUPERADMIN_EMAILS', '')))
+            ->map(fn (string $item) => strtolower(trim($item)))
+            ->filter()
+            ->values();
+
+        return $emails->contains(strtolower($email));
+    }
+
+    private function isAdminLoketEmail(string $email): bool
+    {
+        $emails = collect(explode(',', (string) env('ADMIN_LOKET_EMAILS', '')))
+            ->map(fn (string $item) => strtolower(trim($item)))
+            ->filter()
+            ->values();
+
+        return $emails->contains(strtolower($email));
+    }
+
     private function isAdminEmail(string $email): bool
     {
+        // Backward compatibility for existing env key.
         $adminEmails = collect(explode(',', (string) env('ADMIN_EMAILS', '')))
             ->map(fn (string $item) => strtolower(trim($item)))
             ->filter()
