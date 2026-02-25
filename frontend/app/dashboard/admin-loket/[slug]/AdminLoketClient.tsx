@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BellRing, RotateCcw } from "lucide-react";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { getCsrfHeaders } from "@/lib/csrf";
 import { type LoketSnapshot } from "@/lib/api-loket-queue";
@@ -26,6 +27,8 @@ export default function AdminLoketClient({ slug }: AdminLoketClientProps) {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [lastRealtimeAt, setLastRealtimeAt] = useState<number>(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState<{ id: number; ticketNo: string } | null>(null);
   const isRefreshingRef = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -147,7 +150,7 @@ export default function AdminLoketClient({ slug }: AdminLoketClientProps) {
     }
   };
 
-  const setStatus = async (ticketId: number, status: "waiting" | "completed") => {
+  const setStatus = async (ticketId: number, status: "waiting" | "completed" | "canceled") => {
     setIsLoading(true);
     setMessage("");
     try {
@@ -167,12 +170,31 @@ export default function AdminLoketClient({ slug }: AdminLoketClientProps) {
         return;
       }
       await refresh();
-      setMessage(payload.message ?? "Status diperbarui.");
+      if (status === "canceled") {
+        setMessage(payload.message ?? "Antrian dihapus.");
+      } else {
+        setMessage(payload.message ?? "Status diperbarui.");
+      }
     } catch {
       setMessage("Gangguan jaringan saat mengubah status.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const requestDeleteTicket = (ticketId: number, ticketNo: string) => {
+    setTicketToDelete({ id: ticketId, ticketNo });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteTicket = async () => {
+    if (!ticketToDelete) {
+      return;
+    }
+
+    await setStatus(ticketToDelete.id, "canceled");
+    setDeleteDialogOpen(false);
+    setTicketToDelete(null);
   };
 
   return (
@@ -261,14 +283,25 @@ export default function AdminLoketClient({ slug }: AdminLoketClientProps) {
                     <td className="px-3 py-2">{ticket.user?.name ?? "-"}</td>
                     <td className="px-3 py-2">{statusLabel(ticket.status)}</td>
                     <td className="px-3 py-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => void callTicket(ticket.id)}
-                        disabled={isLoading}
-                      >
-                        Panggil
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => void callTicket(ticket.id)}
+                          disabled={isLoading}
+                        >
+                          Panggil
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => requestDeleteTicket(ticket.id, ticket.ticket_no)}
+                          disabled={isLoading}
+                        >
+                          Hapus
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -283,6 +316,18 @@ export default function AdminLoketClient({ slug }: AdminLoketClientProps) {
           {message}
         </p>
       ) : null}
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Hapus antrian ini?"
+        description={`Nomor ${ticketToDelete?.ticketNo ?? "-"} akan dihapus dari daftar menunggu.`}
+        confirmLabel="Hapus"
+        cancelLabel="Batal"
+        confirmVariant="destructive"
+        isLoading={isLoading}
+        onConfirm={confirmDeleteTicket}
+      />
     </div>
   );
 }
